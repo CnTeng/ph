@@ -1,5 +1,6 @@
 mod config;
 mod path;
+mod view;
 
 use clap::{Parser, Subcommand};
 use config::Config;
@@ -79,20 +80,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Check {} => {
             for persistence in &config.persistence {
                 persistence.check().and_then(|delete_paths| {
-                    if delete_paths.is_empty() {
-                        println!(
-                            "No paths to delete for root: {}",
-                            persistence.root.path.display()
-                        );
-                    } else {
-                        println!(
-                            "Paths to delete for root: {}",
-                            persistence.root.path.display()
-                        );
-                        for path in delete_paths {
-                            println!("{}", path.display());
-                        }
-                    }
+                    print!(
+                        "{}",
+                        view::print_delete_paths(&persistence.root.path, &delete_paths)
+                    );
                     Ok(())
                 })?;
             }
