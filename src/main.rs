@@ -1,9 +1,8 @@
 mod config;
-mod path_set;
+mod path;
 
 use clap::{Parser, Subcommand};
 use config::Config;
-use path_set::PathSet;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
@@ -45,49 +44,12 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn check(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    fn collect_paths(
-        dir: &std::path::Path,
-        path_set: &PathSet,
-        delete_paths: &mut Vec<PathBuf>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-
-            match path_set.path.get(&path) {
-                Some(&should_keep) => {
-                    if !should_keep && path.is_dir() {
-                        collect_paths(&path, path_set, delete_paths)?;
-                    }
-                }
-                None => {
-                    delete_paths.push(path);
-                }
-            }
-        }
-        Ok(())
-    }
-
-    let path_set = PathSet::from(&config.persistence[0]);
-    let mut delete_paths = Vec::new();
-    collect_paths(
-        std::path::Path::new("/persist"),
-        &path_set,
-        &mut delete_paths,
-    )?;
-
-    println!("Paths to delete: {:#?}", delete_paths);
-
-    Ok(())
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     let config_path = cli
         .config
-        .unwrap_or_else(|| PathBuf::from("/etc/persist.json"));
+        .unwrap_or_else(|| PathBuf::from("/home/yufei/.config/ph/config.json"));
 
     let content = fs::read_to_string(config_path)?;
 
@@ -114,7 +76,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             println!("Persist {} to {}", source_abs.display(), dest_dir.display());
         }
-        Commands::Check {} => check(&config)?,
+        Commands::Check {} => {
+            for persistence in &config.persistence {
+                persistence.check().and_then(|delete_paths| {
+                    if delete_paths.is_empty() {
+                        println!(
+                            "No paths to delete for root: {}",
+                            persistence.root.path.display()
+                        );
+                    } else {
+                        println!(
+                            "Paths to delete for root: {}",
+                            persistence.root.path.display()
+                        );
+                        for path in delete_paths {
+                            println!("{}", path.display());
+                        }
+                    }
+                    Ok(())
+                })?;
+            }
+        }
     }
 
     Ok(())
