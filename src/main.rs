@@ -1,11 +1,12 @@
+mod command;
 mod config;
-mod path;
-mod view;
+mod entry;
+
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 
 use clap::{Parser, Subcommand};
 use config::Config;
-use std::path::{Path, PathBuf};
-use std::{fs, io};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -45,7 +46,7 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), std::io::Error> {
     let cli = Cli::parse();
 
     let config_path = cli
@@ -78,15 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Persist {} to {}", source_abs.display(), dest_dir.display());
         }
         Commands::Check {} => {
-            for persistence in &config.persistence {
-                persistence.check().and_then(|delete_paths| {
-                    print!(
-                        "{}",
-                        view::print_delete_paths(&persistence.root.path, &delete_paths)
-                    );
-                    Ok(())
-                })?;
-            }
+            command::plan(&config)?;
         }
     }
 
