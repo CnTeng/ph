@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod entry;
+mod util;
 
 use std::path::PathBuf;
 use std::{fs, io};
@@ -38,7 +39,7 @@ fn main() -> Result<(), io::Error> {
     let config: Config = serde_json::from_str(&content)?;
 
     match cli.command {
-        Commands::Add { path, root } => cli::add(path, root)?,
+        Commands::Add { path, root } => cli::add(&path, &root)?,
         Commands::Check {} => {
             cli::plan(&config)?;
         }

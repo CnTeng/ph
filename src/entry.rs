@@ -4,10 +4,41 @@ use std::{fs, io};
 
 use serde::{Deserialize, Serialize};
 
+use crate::util;
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(transparent)]
 pub struct PersistEntry {
     pub path: PathBuf,
+}
+
+impl PersistEntry {
+    pub fn new(path: PathBuf) -> Self {
+        PersistEntry { path }
+    }
+}
+
+pub fn persist_entry(entry: &PersistEntry, root: &Path) -> io::Result<()> {
+    if !entry.path.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Path {} does not exist.", entry.path.display()),
+        ));
+    }
+
+    let source_abs = fs::canonicalize(&entry.path)?;
+    let dest_dir = root.join(source_abs.strip_prefix("/").unwrap_or(&source_abs));
+    let parent_dir = dest_dir.parent().unwrap();
+
+    fs::create_dir_all(&parent_dir)?;
+
+    if source_abs.is_dir() {
+        util::copy_dir_recursive(&source_abs, &dest_dir)?;
+    } else {
+        util::copy_file_with_owner(&source_abs, &dest_dir)?;
+    };
+
+    Ok(())
 }
 
 pub struct PersistEntrySet {
@@ -59,32 +90,12 @@ impl From<&Vec<PersistEntry>> for PersistEntrySet {
     }
 }
 
-fn collect_paths(
-    dir: &Path,
-    path_set: &PersistEntrySet,
-    delete_paths: &mut Vec<PathBuf>,
-) -> Result<(), io::Error> {
-    for entry in fs::read_dir(dir)? {
-        let path = entry?.path();
-        match path_set.path.get(&path) {
-            Some(true) => continue, // This path is kept, skip it
-            Some(false) => {
-                if path.is_dir() {
-                    collect_paths(&path, path_set, delete_paths)?;
-                }
-            }
-            None => delete_paths.push(path),
-        }
-    }
-    Ok(())
-}
-
 pub fn check_delete_path(
     root: &PersistEntry,
     path_set: &PersistEntrySet,
 ) -> Result<Vec<PathBuf>, io::Error> {
     let mut delete_paths = Vec::new();
-    collect_paths(&root.path, &path_set, &mut delete_paths)?;
+    util::collect_paths(&root.path, &path_set, &mut delete_paths)?;
 
     Ok(delete_paths)
 }
