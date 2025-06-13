@@ -5,8 +5,8 @@ use crate::entry::PersistEntrySet;
 
 pub fn copy_file_with_owner(src: &Path, dst: &Path) -> io::Result<()> {
     fs::copy(src, dst)?;
-    use std::os::unix::fs::chown;
     use std::os::unix::fs::MetadataExt;
+    use std::os::unix::fs::chown;
 
     let metadata = fs::metadata(&src)?;
     let uid = metadata.uid();

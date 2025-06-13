@@ -38,6 +38,7 @@
               rustc
               cargo
               cargo-edit
+              cargo-sort
 
               config.treefmt.build.wrapper
             ];

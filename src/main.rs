@@ -1,10 +1,11 @@
 mod cli;
 mod config;
 mod entry;
+mod tui;
 mod util;
 
+use std::fs;
 use std::path::PathBuf;
-use std::{fs, io};
 
 use clap::{Parser, Subcommand};
 use config::Config;
@@ -28,7 +29,10 @@ enum Commands {
     Check {},
 }
 
-fn main() -> Result<(), io::Error> {
+fn main() -> color_eyre::Result<()> {
+    color_eyre::install()?;
+    let terminal = ratatui::init();
+
     let cli = Cli::parse();
 
     let config_path = cli
@@ -41,9 +45,12 @@ fn main() -> Result<(), io::Error> {
     match cli.command {
         Commands::Add { path, root } => cli::add(&path, &root)?,
         Commands::Check {} => {
-            cli::plan(&config)?;
+            let delete_path = cli::plan(&config)?;
+            tui::App::new(&delete_path).run(terminal)?
         }
     }
+
+    ratatui::restore();
 
     Ok(())
 }
