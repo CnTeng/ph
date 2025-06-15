@@ -1,7 +1,6 @@
 mod cli;
 mod config;
 mod entry;
-mod tui;
 mod util;
 
 use std::fs;
@@ -26,12 +25,11 @@ enum Commands {
     Add { path: PathBuf, root: PathBuf },
 
     /// Check the persistence paths and delete those that are not in the config
-    Check {},
+    Status {},
 }
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
-    let terminal = ratatui::init();
 
     let cli = Cli::parse();
 
@@ -44,13 +42,10 @@ fn main() -> color_eyre::Result<()> {
 
     match cli.command {
         Commands::Add { path, root } => cli::add(&path, &root)?,
-        Commands::Check {} => {
-            let delete_path = cli::plan(&config)?;
-            tui::App::new(&delete_path).run(terminal)?
+        Commands::Status {} => {
+            cli::status(&config)?;
         }
     }
-
-    ratatui::restore();
 
     Ok(())
 }
