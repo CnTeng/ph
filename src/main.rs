@@ -7,6 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use color_eyre::Result;
 use config::Config;
 
 #[derive(Parser)]
@@ -28,7 +29,7 @@ enum Commands {
     Status {},
 }
 
-fn main() -> color_eyre::Result<()> {
+fn main() -> Result<()> {
     color_eyre::install()?;
 
     let cli = Cli::parse();

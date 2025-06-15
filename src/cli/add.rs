@@ -1,8 +1,9 @@
-use std::io;
 use std::path::Path;
 
-use crate::entry::{persist_entry, PersistEntry};
+use color_eyre::Result;
 
-pub fn add(path: &Path, root: &Path) -> io::Result<()> {
+use crate::entry::{PersistEntry, persist_entry};
+
+pub fn add(path: &Path, root: &Path) -> Result<()> {
     return persist_entry(&PersistEntry::new(path.to_path_buf()), root);
 }

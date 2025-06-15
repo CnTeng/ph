@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
+use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::util;
@@ -18,12 +19,13 @@ impl PersistEntry {
     }
 }
 
-pub fn persist_entry(entry: &PersistEntry, root: &Path) -> io::Result<()> {
+pub fn persist_entry(entry: &PersistEntry, root: &Path) -> Result<()> {
     if !entry.path.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            format!("Path {} does not exist.", entry.path.display()),
-        ));
+            format!("Path does not exist: {}", entry.path.display()),
+        )
+        .into());
     }
 
     let source_abs = fs::canonicalize(&entry.path)?;
@@ -90,10 +92,7 @@ impl From<&Vec<PersistEntry>> for PersistEntrySet {
     }
 }
 
-pub fn check_delete_path(
-    root: &PersistEntry,
-    path_set: &PersistEntrySet,
-) -> Result<Vec<PathBuf>, io::Error> {
+pub fn check_delete_path(root: &PersistEntry, path_set: &PersistEntrySet) -> Result<Vec<PathBuf>> {
     let mut delete_paths = Vec::new();
     util::collect_paths(&root.path, &path_set, &mut delete_paths)?;
 

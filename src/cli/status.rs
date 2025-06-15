@@ -1,13 +1,13 @@
 use std::fmt::Write;
-use std::io;
 use std::path::{Path, PathBuf};
 
+use color_eyre::Result;
 use colored::Colorize;
 
 use crate::config::Config;
 use crate::entry::{PersistEntrySet, check_delete_path};
 
-pub fn status(config: &Config) -> Result<(), io::Error> {
+pub fn status(config: &Config) -> Result<()> {
     for p in config.persistence.iter() {
         let mut path_set = PersistEntrySet::from(&p.root);
         path_set.merge(&PersistEntrySet::from(&p.directories));

@@ -1,9 +1,11 @@
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::{fs, io};
+
+use color_eyre::Result;
 
 use crate::entry::PersistEntrySet;
 
-pub fn copy_file_with_owner(src: &Path, dst: &Path) -> io::Result<()> {
+pub fn copy_file_with_owner(src: &Path, dst: &Path) -> Result<()> {
     fs::copy(src, dst)?;
     use std::os::unix::fs::MetadataExt;
     use std::os::unix::fs::chown;
@@ -16,7 +18,7 @@ pub fn copy_file_with_owner(src: &Path, dst: &Path) -> io::Result<()> {
     Ok(())
 }
 
-pub fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
+pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
     if !dst.exists() {
         fs::create_dir_all(dst)?;
     }
@@ -39,7 +41,7 @@ pub fn collect_paths(
     dir: &Path,
     path_set: &PersistEntrySet,
     delete_paths: &mut Vec<PathBuf>,
-) -> Result<(), io::Error> {
+) -> Result<()> {
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
         match path_set.path.get(&path) {
