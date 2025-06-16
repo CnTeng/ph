@@ -1,7 +1,7 @@
-mod add;
+mod persist;
 mod prune;
 mod status;
 
-pub use add::add;
+pub use persist::persist;
 pub use prune::prune;
 pub use status::status;

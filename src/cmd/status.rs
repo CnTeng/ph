@@ -4,23 +4,21 @@ use std::path::Path;
 use color_eyre::Result;
 use colored::Colorize;
 
-use crate::config::Config;
+use crate::config::PersistConfig;
 use crate::entry::{PersistEntryMap, PersistEntrySet, find_deletable_entries};
 
-pub fn status(config: &Config) -> Result<()> {
-    for p in config.persistence.iter() {
-        let mut path_set = PersistEntryMap::from(&p.root);
-        path_set.merge(&PersistEntryMap::from(p.directories.as_slice()));
-        path_set.merge(&PersistEntryMap::from(p.files.as_slice()));
+pub fn status(root: &Path, cfg: &PersistConfig) -> Result<()> {
+    let mut path_set = PersistEntryMap::from(root);
+    path_set.merge(&PersistEntryMap::from(cfg.directories.as_slice()));
+    path_set.merge(&PersistEntryMap::from(cfg.files.as_slice()));
 
-        let delete_paths = find_deletable_entries(&p.root, &path_set)?;
-        print!("{}", print_delete_paths(&p.root, &delete_paths));
-    }
+    let delete_paths = find_deletable_entries(root, &path_set)?;
+    print!("{}", print_delete_paths(root, &delete_paths));
 
     Ok(())
 }
 
-pub fn print_delete_paths(root: &Path, paths: &PersistEntrySet) -> String {
+fn print_delete_paths(root: &Path, paths: &PersistEntrySet) -> String {
     if paths.is_empty() {
         format!(
             "No paths to delete for root: {}",

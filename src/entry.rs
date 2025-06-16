@@ -30,8 +30,8 @@ impl PersistEntryMap {
     }
 }
 
-impl From<&PathBuf> for PersistEntryMap {
-    fn from(entry_path: &PathBuf) -> Self {
+impl From<&Path> for PersistEntryMap {
+    fn from(entry_path: &Path) -> Self {
         let mut set = Self::new();
         for ancestor in entry_path.ancestors() {
             if ancestor.as_os_str().is_empty() {
@@ -39,7 +39,7 @@ impl From<&PathBuf> for PersistEntryMap {
             }
             set.entries.insert(ancestor.to_path_buf(), false);
         }
-        set.entries.insert(entry_path.clone(), true);
+        set.entries.insert(entry_path.to_path_buf(), true);
         set
     }
 }
@@ -48,7 +48,7 @@ impl From<&[PathBuf]> for PersistEntryMap {
     fn from(entry_vec: &[PathBuf]) -> Self {
         let mut set = PersistEntryMap::new();
         entry_vec.iter().for_each(|path| {
-            set.merge(&PersistEntryMap::from(path));
+            set.merge(&PersistEntryMap::from(path.as_path()));
         });
         set
     }
@@ -82,7 +82,7 @@ fn collect_deletable_entries(
     Ok(())
 }
 
-pub fn persist_entry(entry: &Path, root: &Path) -> Result<()> {
+pub fn persist_entry(root: &Path, entry: &Path) -> Result<()> {
     let source_abs = fs::canonicalize(&entry)?;
     let dest_dir = root.join(source_abs.strip_prefix("/").unwrap_or(&source_abs));
     let parent_dir = dest_dir.parent().unwrap();
