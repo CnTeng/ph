@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -40,7 +41,7 @@ pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
 pub fn collect_paths(
     dir: &Path,
     path_set: &PersistEntrySet,
-    delete_paths: &mut Vec<PathBuf>,
+    delete_paths: &mut BTreeSet<PathBuf>,
 ) -> Result<()> {
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
@@ -51,7 +52,9 @@ pub fn collect_paths(
                     collect_paths(&path, path_set, delete_paths)?;
                 }
             }
-            None => delete_paths.push(path),
+            None => {
+                delete_paths.insert(path);
+            }
         }
     }
     Ok(())

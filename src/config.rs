@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
-use crate::entry;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -9,7 +9,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PersistenceInfo {
-    pub root: entry::PersistEntry,
-    pub directories: Vec<entry::PersistEntry>,
-    pub files: Vec<entry::PersistEntry>,
+    pub root: PathBuf,
+    pub directories: Vec<PathBuf>,
+    pub files: Vec<PathBuf>,
 }

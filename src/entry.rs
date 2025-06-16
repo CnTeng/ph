@@ -1,34 +1,21 @@
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use color_eyre::Result;
-use serde::{Deserialize, Serialize};
 
 use crate::util;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(transparent)]
-pub struct PersistEntry {
-    pub path: PathBuf,
-}
-
-impl PersistEntry {
-    pub fn new(path: PathBuf) -> Self {
-        PersistEntry { path }
-    }
-}
-
-pub fn persist_entry(entry: &PersistEntry, root: &Path) -> Result<()> {
-    if !entry.path.exists() {
+pub fn persist_entry(entry: &PathBuf, root: &Path) -> Result<()> {
+    if !entry.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            format!("Path does not exist: {}", entry.path.display()),
+            format!("Path does not exist: {}", entry.display()),
         )
         .into());
     }
 
-    let source_abs = fs::canonicalize(&entry.path)?;
+    let source_abs = fs::canonicalize(&entry)?;
     let dest_dir = root.join(source_abs.strip_prefix("/").unwrap_or(&source_abs));
     let parent_dir = dest_dir.parent().unwrap();
 
@@ -66,24 +53,24 @@ impl PersistEntrySet {
     }
 }
 
-impl From<&PersistEntry> for PersistEntrySet {
-    fn from(persist_path: &PersistEntry) -> Self {
+impl From<&PathBuf> for PersistEntrySet {
+    fn from(persist_path: &PathBuf) -> Self {
         let mut set = PersistEntrySet::new();
 
-        for ancestor in persist_path.path.ancestors() {
+        for ancestor in persist_path.ancestors() {
             if ancestor.as_os_str().is_empty() {
                 continue;
             }
             set.path.insert(ancestor.to_path_buf(), false);
         }
 
-        set.path.insert(persist_path.path.clone(), true);
+        set.path.insert(persist_path.clone(), true);
         set
     }
 }
 
-impl From<&Vec<PersistEntry>> for PersistEntrySet {
-    fn from(vec: &Vec<PersistEntry>) -> Self {
+impl From<&Vec<PathBuf>> for PersistEntrySet {
+    fn from(vec: &Vec<PathBuf>) -> Self {
         let mut set = PersistEntrySet::new();
         vec.iter().for_each(|path| {
             set.merge(&PersistEntrySet::from(path));
@@ -92,9 +79,9 @@ impl From<&Vec<PersistEntry>> for PersistEntrySet {
     }
 }
 
-pub fn check_delete_path(root: &PersistEntry, path_set: &PersistEntrySet) -> Result<Vec<PathBuf>> {
-    let mut delete_paths = Vec::new();
-    util::collect_paths(&root.path, &path_set, &mut delete_paths)?;
+pub fn check_delete_path(root: &PathBuf, path_set: &PersistEntrySet) -> Result<BTreeSet<PathBuf>> {
+    let mut delete_paths = BTreeSet::new();
+    util::collect_paths(&root, &path_set, &mut delete_paths)?;
 
     Ok(delete_paths)
 }

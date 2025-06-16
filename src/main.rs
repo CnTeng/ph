@@ -23,10 +23,15 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Add a path to the persistence configuration
-    Add { path: PathBuf, root: PathBuf },
+    Add {
+        path: PathBuf,
+        root: PathBuf,
+    },
 
     /// Check the persistence paths and delete those that are not in the config
     Status {},
+
+    Prune {},
 }
 
 fn main() -> Result<()> {
@@ -45,6 +50,9 @@ fn main() -> Result<()> {
         Commands::Add { path, root } => cli::add(&path, &root)?,
         Commands::Status {} => {
             cli::status(&config)?;
+        }
+        Commands::Prune {} => {
+            cli::prune(&config)?;
         }
     }
 

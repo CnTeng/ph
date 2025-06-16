@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
 
@@ -14,13 +15,13 @@ pub fn status(config: &Config) -> Result<()> {
         path_set.merge(&PersistEntrySet::from(&p.files));
 
         let delete_paths = check_delete_path(&p.root, &path_set)?;
-        print!("{}", print_delete_paths(&p.root.path, &delete_paths));
+        print!("{}", print_delete_paths(&p.root, &delete_paths));
     }
 
     Ok(())
 }
 
-pub fn print_delete_paths(root: &Path, paths: &Vec<PathBuf>) -> String {
+pub fn print_delete_paths(root: &Path, paths: &BTreeSet<PathBuf>) -> String {
     if paths.is_empty() {
         format!(
             "No paths to delete for root: {}",
