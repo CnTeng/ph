@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
@@ -11,35 +11,51 @@ use crate::entry::{PersistEntryMap, PersistEntrySet, find_deletable_entries};
 
 pub fn prune(config: &Config) -> Result<()> {
     for p in config.persistence.iter() {
-        let mut path_set = PersistEntryMap::from(&p.root);
-        path_set.merge(&PersistEntryMap::from(p.directories.as_slice()));
-        path_set.merge(&PersistEntryMap::from(p.files.as_slice()));
+        let mut entry_map = PersistEntryMap::from(&p.root);
+        entry_map.merge(&PersistEntryMap::from(p.directories.as_slice()));
+        entry_map.merge(&PersistEntryMap::from(p.files.as_slice()));
 
-        let delete_paths = find_deletable_entries(&p.root, &path_set)?;
-        if delete_paths.is_empty() {
+        let deletable_entries = find_deletable_entries(&p.root, &entry_map)?;
+        if deletable_entries.is_empty() {
             println!("No paths to delete for root: {}", p.root.display());
         }
 
-        let delete_paths_str: Vec<String> = delete_paths
+        let deletable_entries_str: Vec<&str> = deletable_entries
             .iter()
-            .map(|path| path.display().to_string())
+            .filter_map(|e| e.to_str())
             .collect();
-        let edited = create_temp_file(delete_paths_str.iter().map(String::as_str).collect())?;
 
-        let edit_set: PersistEntrySet = edited.into_iter().map(PathBuf::from).collect();
-        let diff: PersistEntrySet = delete_paths.difference(&edit_set).cloned().collect();
-        for path in diff {
-            if path.exists() {
-                println!("Deleted: {}", path.display());
+        let edited_entries = create_temp_file(&deletable_entries_str)?;
+
+        let edited_set: PersistEntrySet = edited_entries.into_iter().map(PathBuf::from).collect();
+        let delete_set: PersistEntrySet =
+            deletable_entries.difference(&edited_set).cloned().collect();
+
+        for entry in delete_set {
+            match fs::metadata(&entry) {
+                Ok(meta) => {
+                    if meta.is_dir() {
+                        std::fs::remove_dir_all(&entry)?;
+                    } else {
+                        std::fs::remove_file(&entry)?;
+                    }
+                    println!("Deleted: {}", entry.display());
+                }
+                Err(_) => {
+                    println!(
+                        "Path does not exist, skipping deletion: {}",
+                        entry.display()
+                    );
+                }
             }
         }
     }
     Ok(())
 }
 
-fn create_temp_file(data: Vec<&str>) -> Result<Vec<String>> {
+fn create_temp_file(entries: &[&str]) -> Result<Vec<String>> {
     let mut temp = NamedTempFile::new()?;
-    for line in data {
+    for line in entries {
         writeln!(temp, "{line}")?;
     }
 
@@ -47,11 +63,17 @@ fn create_temp_file(data: Vec<&str>) -> Result<Vec<String>> {
     let editor = std::env::var("EDITOR").unwrap_or("vi".into());
     Command::new(editor).arg(path).status()?;
 
-    let edited = read_to_string(path)?;
-    let edited: Vec<String> = edited
+    let edited: Vec<String> = fs::read_to_string(path)?
         .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(String::from)
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
         .collect();
+
     Ok(edited)
 }
