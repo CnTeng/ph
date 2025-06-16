@@ -2,7 +2,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use color_eyre::Result;
+use color_eyre::{Result, eyre::eyre};
 
 use crate::util;
 
@@ -87,10 +87,7 @@ pub fn persist_entry(root: &Path, entry: &Path) -> Result<PathBuf> {
     let dst = root.join(src.strip_prefix("/").unwrap_or(&src));
 
     if dst.exists() {
-        return Err(color_eyre::eyre::eyre!(
-            "Destination path already exists: {}",
-            dst.display()
-        ));
+        return Err(eyre!("Destination path already exists: {}", dst.display()));
     }
 
     for ancestor in src.ancestors() {

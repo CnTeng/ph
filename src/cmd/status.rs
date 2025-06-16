@@ -2,7 +2,7 @@ use std::fmt::Write;
 use std::path::Path;
 
 use color_eyre::Result;
-use colored::Colorize;
+use owo_colors::OwoColorize as _;
 
 use crate::config::PersistConfig;
 use crate::entry::{PersistEntryMap, PersistEntrySet, find_deletable_entries};
