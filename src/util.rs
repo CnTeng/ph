@@ -1,10 +1,7 @@
-use std::collections::BTreeSet;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use color_eyre::Result;
-
-use crate::entry::PersistEntrySet;
 
 pub fn copy_file_with_owner(src: &Path, dst: &Path) -> Result<()> {
     fs::copy(src, dst)?;
@@ -33,28 +30,6 @@ pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
             copy_dir_recursive(&src_path, &dst_path)?;
         } else {
             fs::copy(&src_path, &dst_path)?;
-        }
-    }
-    Ok(())
-}
-
-pub fn collect_paths(
-    dir: &Path,
-    path_set: &PersistEntrySet,
-    delete_paths: &mut BTreeSet<PathBuf>,
-) -> Result<()> {
-    for entry in fs::read_dir(dir)? {
-        let path = entry?.path();
-        match path_set.path.get(&path) {
-            Some(true) => continue, // This path is kept, skip it
-            Some(false) => {
-                if path.is_dir() {
-                    collect_paths(&path, path_set, delete_paths)?;
-                }
-            }
-            None => {
-                delete_paths.insert(path);
-            }
         }
     }
     Ok(())

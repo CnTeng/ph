@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    pub persistence: Vec<PersistenceInfo>,
+    pub persistence: Vec<PersistConfig>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct PersistenceInfo {
+pub struct PersistConfig {
     pub root: PathBuf,
     pub directories: Vec<PathBuf>,
     pub files: Vec<PathBuf>,

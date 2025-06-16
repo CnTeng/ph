@@ -1,27 +1,26 @@
-use std::collections::BTreeSet;
 use std::fmt::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use color_eyre::Result;
 use colored::Colorize;
 
 use crate::config::Config;
-use crate::entry::{PersistEntrySet, check_delete_path};
+use crate::entry::{PersistEntryMap, PersistEntrySet, find_deletable_entries};
 
 pub fn status(config: &Config) -> Result<()> {
     for p in config.persistence.iter() {
-        let mut path_set = PersistEntrySet::from(&p.root);
-        path_set.merge(&PersistEntrySet::from(&p.directories));
-        path_set.merge(&PersistEntrySet::from(&p.files));
+        let mut path_set = PersistEntryMap::from(&p.root);
+        path_set.merge(&PersistEntryMap::from(p.directories.as_slice()));
+        path_set.merge(&PersistEntryMap::from(p.files.as_slice()));
 
-        let delete_paths = check_delete_path(&p.root, &path_set)?;
+        let delete_paths = find_deletable_entries(&p.root, &path_set)?;
         print!("{}", print_delete_paths(&p.root, &delete_paths));
     }
 
     Ok(())
 }
 
-pub fn print_delete_paths(root: &Path, paths: &BTreeSet<PathBuf>) -> String {
+pub fn print_delete_paths(root: &Path, paths: &PersistEntrySet) -> String {
     if paths.is_empty() {
         format!(
             "No paths to delete for root: {}",
