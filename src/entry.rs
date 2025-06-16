@@ -82,18 +82,30 @@ fn collect_deletable_entries(
     Ok(())
 }
 
-pub fn persist_entry(root: &Path, entry: &Path) -> Result<()> {
-    let source_abs = fs::canonicalize(&entry)?;
-    let dest_dir = root.join(source_abs.strip_prefix("/").unwrap_or(&source_abs));
-    let parent_dir = dest_dir.parent().unwrap();
+pub fn persist_entry(root: &Path, entry: &Path) -> Result<PathBuf> {
+    let src = fs::canonicalize(&entry)?;
+    let dst = root.join(src.strip_prefix("/").unwrap_or(&src));
 
-    fs::create_dir_all(&parent_dir)?;
+    if dst.exists() {
+        return Err(color_eyre::eyre::eyre!(
+            "Destination path already exists: {}",
+            dst.display()
+        ));
+    }
 
-    if source_abs.is_dir() {
-        util::copy_dir_recursive(&source_abs, &dest_dir)?;
+    for ancestor in src.ancestors() {
+        let metadata = fs::metadata(ancestor)?;
+        let dst_ancestor = root.join(ancestor.strip_prefix("/").unwrap_or(ancestor));
+        if dst_ancestor.is_dir() {
+            util::create_dir_with_metadata(&dst_ancestor, &metadata)?;
+        }
+    }
+
+    if src.is_dir() {
+        util::copy_dir_recursive(&src, &dst)?;
     } else {
-        util::copy_file_with_owner(&source_abs, &dest_dir)?;
+        util::copy_file_with_owner(&src, &dst)?;
     };
 
-    Ok(())
+    Ok(dst)
 }

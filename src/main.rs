@@ -29,11 +29,11 @@ enum Commands {
     /// Add a path to the persistence configuration
     Persist { path: PathBuf },
 
-    /// Check the persistence paths and delete those that are not in the config
-    Status {},
-
     /// Prune the persistence paths by deleting those that are not in the config
     Prune {},
+
+    /// Check the persistence paths and delete those that are not in the config
+    Status {},
 }
 
 fn main() -> Result<()> {
@@ -63,8 +63,8 @@ fn main() -> Result<()> {
 
     match cli.command {
         Commands::Persist { path } => cmd::persist(root, &path)?,
-        Commands::Status {} => cmd::status(root, cfg)?,
         Commands::Prune {} => cmd::prune(root, cfg)?,
+        Commands::Status {} => cmd::status(root, cfg)?,
     }
 
     Ok(())
