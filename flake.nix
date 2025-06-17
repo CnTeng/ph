@@ -54,10 +54,6 @@
               ];
             }
           );
-          rustPlatform = pkgs.makeRustPlatform {
-            cargo = toolchain;
-            rustc = toolchain;
-          };
         in
         {
           _module.args = {
@@ -81,11 +77,7 @@
 
           checks.ph = import ./nix/check.nix self pkgs.nixosTest;
 
-          packages = {
-            ph = pkgs.callPackage ./nix/ph.nix {
-              inherit rustPlatform;
-            };
-          };
+          packages.ph = pkgs.callPackage ./nix/ph.nix { };
 
           treefmt.programs = {
             nixfmt.enable = true;
