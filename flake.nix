@@ -6,6 +6,11 @@
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     git-hooks-nix = {
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,7 +23,7 @@
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
+    inputs@{ self, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
@@ -30,13 +35,47 @@
         inputs.treefmt.flakeModule
       ];
 
+      flake.nixosModules.default = import ./nix/module.nix self;
+
       perSystem =
-        { config, pkgs, ... }:
         {
+          config,
+          pkgs,
+          system,
+          ...
+        }:
+        let
+          toolchain = pkgs.rust-bin.stable.latest.minimal.override {
+            extensions = [
+              "rust-src"
+              "rustfmt"
+              "rust-analyzer"
+              "clippy"
+            ];
+          };
+          rustPlatform = pkgs.makeRustPlatform {
+            cargo = toolchain;
+            rustc = toolchain;
+          };
+        in
+        {
+          _module.args = {
+            pkgs = import inputs.nixpkgs {
+              inherit system;
+              overlays = [ inputs.rust-overlay.overlays.default ];
+            };
+          };
+
           devShells.default = pkgs.mkShell {
             packages = with pkgs; [
-              rustc
-              cargo
+              (rust-bin.stable.latest.minimal.override {
+                extensions = [
+                  "rust-src"
+                  "rustfmt"
+                  "rust-analyzer"
+                  "clippy"
+                ];
+              })
               cargo-edit
               cargo-sort
 
@@ -44,6 +83,14 @@
             ];
 
             shellHook = config.pre-commit.installationScript;
+          };
+
+          checks.ph = import ./nix/check.nix self pkgs.nixosTest;
+
+          packages = {
+            ph = pkgs.callPackage ./nix/ph.nix {
+              inherit rustPlatform;
+            };
           };
 
           treefmt.programs = {

@@ -20,7 +20,7 @@ pub fn persist(root: &Path, entry: &Path) -> Result<()> {
 
     println!("Source:");
 
-    print_metadata("target", &entry)?;
+    print_metadata("target", entry)?;
     if let Some(src_parent) = entry.parent() {
         print_metadata("parent", src_parent)?;
     }

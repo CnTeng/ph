@@ -32,7 +32,7 @@ fn print_delete_paths(root: &Path, paths: &PersistEntrySet) -> String {
             root.display().to_string().bold()
         )
         .unwrap();
-        paths.into_iter().for_each(|path| {
+        paths.iter().for_each(|path| {
             writeln!(output, "\t{}", path.display().to_string().red()).unwrap();
         });
         output

@@ -56,7 +56,7 @@ impl From<&[PathBuf]> for PersistEntryMap {
 
 pub fn find_deletable_entries(root: &Path, path_set: &PersistEntryMap) -> Result<PersistEntrySet> {
     let mut delete_paths = BTreeSet::new();
-    collect_deletable_entries(&root, &path_set, &mut delete_paths)?;
+    collect_deletable_entries(root, path_set, &mut delete_paths)?;
     Ok(delete_paths)
 }
 
@@ -83,7 +83,7 @@ fn collect_deletable_entries(
 }
 
 pub fn persist_entry(root: &Path, entry: &Path) -> Result<PathBuf> {
-    let src = fs::canonicalize(&entry)?;
+    let src = fs::canonicalize(entry)?;
     let dst = root.join(src.strip_prefix("/").unwrap_or(&src));
 
     if dst.exists() {
