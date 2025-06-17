@@ -75,5 +75,5 @@ fn print_user_group(meta: &fs::Metadata) -> String {
 		.and_then(|g| g.name().to_str().map(String::from))
 		.unwrap_or(gid.to_string());
 
-	format!("{} {}", user, group)
+	format!("{user} {group}")
 }
