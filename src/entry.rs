@@ -11,100 +11,99 @@ pub type PersistEntrySet = BTreeSet<PathBuf>;
 
 #[derive(Debug)]
 pub struct PersistEntryMap {
-	pub entries: HashMap<PathBuf, bool>,
+    pub entries: HashMap<PathBuf, bool>,
 }
 
 impl PersistEntryMap {
-	pub fn new() -> Self {
-		PersistEntryMap {
-			entries: HashMap::new(),
-		}
-	}
+    pub fn new() -> Self {
+        PersistEntryMap {
+            entries: HashMap::new(),
+        }
+    }
 
-	pub fn merge(&mut self, other: &PersistEntryMap) {
-		for (entry, keep) in &other.entries {
-			self
-				.entries
-				.entry(entry.clone())
-				.and_modify(|e| *e |= *keep)
-				.or_insert(*keep);
-		}
-	}
+    pub fn merge(&mut self, other: &PersistEntryMap) {
+        for (entry, keep) in &other.entries {
+            self.entries
+                .entry(entry.clone())
+                .and_modify(|e| *e |= *keep)
+                .or_insert(*keep);
+        }
+    }
 }
 
 impl From<&Path> for PersistEntryMap {
-	fn from(entry_path: &Path) -> Self {
-		let mut set = Self::new();
-		for ancestor in entry_path.ancestors() {
-			if ancestor.as_os_str().is_empty() {
-				continue;
-			}
-			set.entries.insert(ancestor.to_path_buf(), false);
-		}
-		set.entries.insert(entry_path.to_path_buf(), true);
-		set
-	}
+    fn from(entry_path: &Path) -> Self {
+        let mut set = Self::new();
+        for ancestor in entry_path.ancestors() {
+            if ancestor.as_os_str().is_empty() {
+                continue;
+            }
+            set.entries.insert(ancestor.to_path_buf(), false);
+        }
+        set.entries.insert(entry_path.to_path_buf(), true);
+        set
+    }
 }
 
 impl From<&[PathBuf]> for PersistEntryMap {
-	fn from(entry_vec: &[PathBuf]) -> Self {
-		let mut set = PersistEntryMap::new();
-		entry_vec.iter().for_each(|path| {
-			set.merge(&PersistEntryMap::from(path.as_path()));
-		});
-		set
-	}
+    fn from(entry_vec: &[PathBuf]) -> Self {
+        let mut set = PersistEntryMap::new();
+        entry_vec.iter().for_each(|path| {
+            set.merge(&PersistEntryMap::from(path.as_path()));
+        });
+        set
+    }
 }
 
 pub fn find_deletable_entries(root: &Path, path_set: &PersistEntryMap) -> Result<PersistEntrySet> {
-	let mut delete_paths = BTreeSet::new();
-	collect_deletable_entries(root, path_set, &mut delete_paths)?;
-	Ok(delete_paths)
+    let mut delete_paths = BTreeSet::new();
+    collect_deletable_entries(root, path_set, &mut delete_paths)?;
+    Ok(delete_paths)
 }
 
 fn collect_deletable_entries(
-	dir: &Path,
-	entry_map: &PersistEntryMap,
-	entry_set: &mut PersistEntrySet,
+    dir: &Path,
+    entry_map: &PersistEntryMap,
+    entry_set: &mut PersistEntrySet,
 ) -> Result<()> {
-	for entry in fs::read_dir(dir)? {
-		let path = entry?.path();
-		match entry_map.entries.get(&path) {
-			Some(true) => continue, // This path is kept, skip it
-			Some(false) => {
-				if path.is_dir() {
-					collect_deletable_entries(&path, entry_map, entry_set)?;
-				}
-			}
-			None => {
-				entry_set.insert(path);
-			}
-		}
-	}
-	Ok(())
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        match entry_map.entries.get(&path) {
+            Some(true) => continue, // This path is kept, skip it
+            Some(false) => {
+                if path.is_dir() {
+                    collect_deletable_entries(&path, entry_map, entry_set)?;
+                }
+            }
+            None => {
+                entry_set.insert(path);
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn persist_entry(root: &Path, entry: &Path) -> Result<PathBuf> {
-	let src = fs::canonicalize(entry)?;
-	let dst = root.join(src.strip_prefix("/").unwrap_or(&src));
+    let src = fs::canonicalize(entry)?;
+    let dst = root.join(src.strip_prefix("/").unwrap_or(&src));
 
-	if dst.exists() {
-		return Err(eyre!("Destination path already exists: {}", dst.display()));
-	}
+    if dst.exists() {
+        return Err(eyre!("Destination path already exists: {}", dst.display()));
+    }
 
-	for ancestor in src.ancestors() {
-		let metadata = fs::metadata(ancestor)?;
-		let dst_ancestor = root.join(ancestor.strip_prefix("/").unwrap_or(ancestor));
-		if dst_ancestor.is_dir() {
-			util::create_dir_with_metadata(&dst_ancestor, &metadata)?;
-		}
-	}
+    for ancestor in src.ancestors() {
+        let metadata = fs::metadata(ancestor)?;
+        let dst_ancestor = root.join(ancestor.strip_prefix("/").unwrap_or(ancestor));
+        if dst_ancestor.is_dir() {
+            util::create_dir_with_metadata(&dst_ancestor, &metadata)?;
+        }
+    }
 
-	if src.is_dir() {
-		util::copy_dir_recursive(&src, &dst)?;
-	} else {
-		util::copy_file_with_owner(&src, &dst)?;
-	};
+    if src.is_dir() {
+        util::copy_dir_recursive(&src, &dst)?;
+    } else {
+        util::copy_file_with_owner(&src, &dst)?;
+    };
 
-	Ok(dst)
+    Ok(dst)
 }
