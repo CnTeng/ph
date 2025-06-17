@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
 
+use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 const CONFIG_FILE_PATH: &str = "/etc/ph/config.json";
@@ -28,7 +29,7 @@ impl Config {
         match self.persistence.len() {
             0 => Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                "No persistence paths found in config",
+                "No persistence configurations found",
             )),
             1 => {
                 let (path, config) = self.persistence.iter().next().unwrap();
@@ -42,12 +43,23 @@ impl Config {
                     .ok_or_else(|| {
                         io::Error::new(
                             io::ErrorKind::NotFound,
-                            format!("Root path not found in config: {}", root_path.display()),
+                            format!("Root '{}' not found in configuration", root_path.display()),
                         )
                     }),
                 None => Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
-                    "Multiple persistence paths found, please specify one using --root",
+                    format!(
+                        "Multiple persistence roots found. Please specify one with '--root':\n{}",
+                        self.persistence
+                            .keys()
+                            .fold(String::new(), |mut s, p| {
+                                s.push('\t');
+                                s.push_str(&p.display().bold().to_string());
+                                s.push('\n');
+                                s
+                            })
+                            .trim_end()
+                    ),
                 )),
             },
         }

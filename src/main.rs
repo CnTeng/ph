@@ -9,8 +9,7 @@ use std::{io, process};
 use clap::{CommandFactory as _, Parser, Subcommand};
 use clap_complete::{Shell, generate};
 use config::Config;
-use owo_colors::OwoColorize;
-use owo_colors::colors::Red;
+use owo_colors::{OwoColorize as _, colors};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -53,7 +52,7 @@ fn main() {
     };
 
     if let Err(e) = &result {
-        eprintln!("{}: {e}", "Error".fg::<Red>().bold());
+        eprintln!("{}: {e}", "Error".fg::<colors::Red>().bold());
         process::exit(1);
     }
 }

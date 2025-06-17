@@ -10,13 +10,13 @@ pub fn create_dir_with_metadata(dir: &Path, meta: &fs::Metadata) -> io::Result<(
     Ok(())
 }
 
-pub fn copy_file_with_owner(src: &Path, dst: &Path) -> io::Result<()> {
+pub fn copy_file_with_metadata(src: &Path, dst: &Path) -> io::Result<()> {
     fs::copy(src, dst)?;
     set_metadata(dst, &fs::metadata(src)?)?;
     Ok(())
 }
 
-pub fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
+pub fn copy_dir_recursive_with_metadata(src: &Path, dst: &Path) -> io::Result<()> {
     if !dst.exists() {
         fs::create_dir_all(dst)?;
         set_metadata(dst, &fs::metadata(src)?)?;
@@ -28,22 +28,15 @@ pub fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
         let dst_path = dst.join(entry.file_name());
 
         if src_path.is_dir() {
-            copy_dir_recursive(&src_path, &dst_path)?;
+            copy_dir_recursive_with_metadata(&src_path, &dst_path)?;
         } else {
-            copy_file_with_owner(&src_path, &dst_path)?;
+            copy_file_with_metadata(&src_path, &dst_path)?;
         }
     }
     Ok(())
 }
 
 fn set_metadata(path: &Path, metadata: &fs::Metadata) -> io::Result<()> {
-    if !path.exists() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("Path does not exist: {}", path.display()),
-        ));
-    }
-
     let perm = metadata.permissions();
     let uid = metadata.uid();
     let gid = metadata.gid();

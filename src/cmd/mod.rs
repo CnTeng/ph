@@ -1,3 +1,4 @@
+mod format;
 mod persist;
 mod prune;
 mod status;

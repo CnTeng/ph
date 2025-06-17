@@ -54,10 +54,10 @@ impl From<&[PathBuf]> for PersistEntryMap {
 
 pub fn find_deletable_entries(
     root: &Path,
-    path_set: &PersistEntryMap,
+    entry_map: &PersistEntryMap,
 ) -> io::Result<PersistEntrySet> {
     let mut delete_paths = BTreeSet::new();
-    collect_deletable_entries(root, path_set, &mut delete_paths)?;
+    collect_deletable_entries(root, entry_map, &mut delete_paths)?;
     Ok(delete_paths)
 }
 
@@ -94,18 +94,18 @@ pub fn persist_entry(root: &Path, entry: &Path) -> io::Result<PathBuf> {
         ));
     }
 
-    for ancestor in src.ancestors() {
-        let metadata = fs::metadata(ancestor)?;
-        let dst_ancestor = root.join(ancestor.strip_prefix("/").unwrap_or(ancestor));
+    for src_ancestor in src.ancestors() {
+        let meta = fs::metadata(src_ancestor)?;
+        let dst_ancestor = root.join(src_ancestor.strip_prefix("/").unwrap_or(src_ancestor));
         if dst_ancestor.is_dir() {
-            util::create_dir_with_metadata(&dst_ancestor, &metadata)?;
+            util::create_dir_with_metadata(&dst_ancestor, &meta)?;
         }
     }
 
     if src.is_dir() {
-        util::copy_dir_recursive(&src, &dst)?;
+        util::copy_dir_recursive_with_metadata(&src, &dst)?;
     } else {
-        util::copy_file_with_owner(&src, &dst)?;
+        util::copy_file_with_metadata(&src, &dst)?;
     };
 
     Ok(dst)
