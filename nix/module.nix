@@ -31,7 +31,9 @@ in
     environment.systemPackages = [ cfg.package ];
 
     environment.etc."ph/config.json".source = format.generate "config.json" {
-      persistence = lib.mapAttrs (name: value: mkPersistNode name value) config.environment.persistence;
+      persistence = lib.optionalAttrs (config.environment ? persistence) (
+        lib.mapAttrs (name: value: mkPersistNode name value) config.environment.persistence
+      );
     };
   };
 }

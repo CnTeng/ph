@@ -27,7 +27,12 @@ rustPlatform.buildRustPackage rec {
     installShellFiles
   ];
 
-  postInstall = '''';
+  postInstall = ''
+    installShellCompletion --cmd ph \
+      --bash <($out/bin/ph completion bash) \
+      --zsh <($out/bin/ph completion zsh) \
+      --fish <($out/bin/ph completion fish)
+  '';
 
   meta = {
     description = "Helper for impermanence.";

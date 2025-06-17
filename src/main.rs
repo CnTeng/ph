@@ -3,9 +3,11 @@ mod config;
 mod entry;
 mod util;
 
+use std::io;
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory as _, Parser, Subcommand};
+use clap_complete::{ArgValueCompleter, Shell, generate};
 use color_eyre::Result;
 use config::Config;
 
@@ -15,7 +17,7 @@ struct Cli {
 	#[command(subcommand)]
 	command: Commands,
 
-	#[arg(short, long, value_name = "FILE", global = true)]
+	#[arg(long, value_name = "FILE", global = true, add = ArgValueCompleter::new(cmd::root_completer))]
 	root: Option<PathBuf>,
 }
 
@@ -29,12 +31,29 @@ enum Commands {
 
 	/// Check the persistence paths and delete those that are not in the config
 	Status {},
+
+	/// Generate completion scripts for the CLI
+	Completion {
+		#[arg(value_enum)]
+		shell: Shell,
+	},
 }
 
 fn main() -> Result<()> {
 	color_eyre::install()?;
 
 	let cli = Cli::parse();
+	match cli.command {
+		Commands::Completion { shell } => {
+			generate(shell, &mut Cli::command(), "ph", &mut io::stdout());
+		}
+		_ => run_command(cli)?,
+	}
+
+	Ok(())
+}
+
+fn run_command(cli: Cli) -> Result<()> {
 	let config = Config::load()?;
 	let (root, cfg) = config.get_persist_config(cli.root.as_deref())?;
 
@@ -42,6 +61,7 @@ fn main() -> Result<()> {
 		Commands::Persist { path } => cmd::persist(&root, &path)?,
 		Commands::Prune {} => cmd::prune(&root, cfg)?,
 		Commands::Status {} => cmd::status(&root, cfg)?,
+		Commands::Completion { .. } => unreachable!(),
 	}
 
 	Ok(())
