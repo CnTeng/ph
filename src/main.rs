@@ -6,7 +6,7 @@ mod util;
 use std::path::PathBuf;
 use std::{io, process};
 
-use clap::{CommandFactory as _, Parser, Subcommand};
+use clap::{Command, CommandFactory as _, Parser, Subcommand};
 use clap_complete::{Shell, generate};
 use config::Config;
 use owo_colors::{OwoColorize as _, colors};
@@ -17,23 +17,23 @@ struct Cli {
     #[command(subcommand)]
     command: Commands,
 
-    /// The root path for the persistence configuration
+    /// The root path for the persistence
     #[arg(long, value_name = "PATH", global = true)]
     root: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Add a path to the persistence configuration
+    /// Persist a new path
     Persist { path: PathBuf },
 
-    /// Prune the persistence paths by deleting those that are not in the config
+    /// Prune the persistence paths
     Prune {},
 
-    /// Check the persistence paths and delete those that are not in the config
+    /// Show the status of the persistence
     Status {},
 
-    /// Generate completion scripts for the CLI
+    /// Generate shell completion scripts
     #[command(hide = true)]
     Completion {
         #[arg(value_enum)]
@@ -43,16 +43,16 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-    let result = match cli.command {
+
+    if let Err(err) = match cli.command {
         Commands::Completion { shell } => {
-            generate(shell, &mut Cli::command(), "ph", &mut io::stdout());
+            let cmd: &mut Command = &mut Cli::command();
+            generate(shell, cmd, cmd.get_name().to_string(), &mut io::stdout());
             Ok(())
         }
         _ => run_command(cli),
-    };
-
-    if let Err(e) = &result {
-        eprintln!("{}: {e}", "Error".fg::<colors::Red>().bold());
+    } {
+        eprintln!("{}: {err}", "Error".fg::<colors::Red>().bold());
         process::exit(1);
     }
 }
