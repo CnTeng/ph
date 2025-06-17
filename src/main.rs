@@ -7,7 +7,7 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::{CommandFactory as _, Parser, Subcommand};
-use clap_complete::{ArgValueCompleter, Shell, generate};
+use clap_complete::{Shell, generate};
 use color_eyre::Result;
 use config::Config;
 
@@ -17,7 +17,8 @@ struct Cli {
 	#[command(subcommand)]
 	command: Commands,
 
-	#[arg(long, value_name = "FILE", global = true, add = ArgValueCompleter::new(cmd::root_completer))]
+	/// The root path for the persistence configuration
+	#[arg(long, value_name = "PATH", global = true)]
 	root: Option<PathBuf>,
 }
 

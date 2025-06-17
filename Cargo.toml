@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.40", features = ["derive"] }
-clap_complete = { version = "4.5.54", features = ["unstable-dynamic"] }
+clap_complete = "4.5.54"
 color-eyre = "0.6.5"
 owo-colors = "4.2.1"
 serde = { version = "1.0", features = ["derive"] }
