@@ -45,14 +45,15 @@
           ...
         }:
         let
-          toolchain = pkgs.rust-bin.stable.latest.minimal.override {
-            extensions = [
-              "rust-src"
-              "rustfmt"
-              "rust-analyzer"
-              "clippy"
-            ];
-          };
+          toolchain = pkgs.rust-bin.selectLatestNightlyWith (
+            toolchain:
+            toolchain.default.override {
+              extensions = [
+                "rust-analyzer"
+                "rust-src"
+              ];
+            }
+          );
           rustPlatform = pkgs.makeRustPlatform {
             cargo = toolchain;
             rustc = toolchain;
@@ -68,14 +69,7 @@
 
           devShells.default = pkgs.mkShell {
             packages = with pkgs; [
-              (rust-bin.stable.latest.minimal.override {
-                extensions = [
-                  "rust-src"
-                  "rustfmt"
-                  "rust-analyzer"
-                  "clippy"
-                ];
-              })
+              toolchain
               cargo-edit
               cargo-sort
 
@@ -95,6 +89,7 @@
 
           treefmt.programs = {
             nixfmt.enable = true;
+            rustfmt.package = toolchain;
             prettier.enable = true;
             rustfmt.enable = true;
             taplo.enable = true;
