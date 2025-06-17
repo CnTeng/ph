@@ -3,13 +3,14 @@ mod config;
 mod entry;
 mod util;
 
-use std::io;
 use std::path::PathBuf;
+use std::{io, process};
 
 use clap::{CommandFactory as _, Parser, Subcommand};
 use clap_complete::{Shell, generate};
-use color_eyre::Result;
 use config::Config;
+use owo_colors::OwoColorize;
+use owo_colors::colors::Red;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -41,21 +42,23 @@ enum Commands {
     },
 }
 
-fn main() -> Result<()> {
-    color_eyre::install()?;
-
+fn main() {
     let cli = Cli::parse();
-    match cli.command {
+    let result = match cli.command {
         Commands::Completion { shell } => {
             generate(shell, &mut Cli::command(), "ph", &mut io::stdout());
+            Ok(())
         }
-        _ => run_command(cli)?,
-    }
+        _ => run_command(cli),
+    };
 
-    Ok(())
+    if let Err(e) = &result {
+        eprintln!("{}: {e}", "Error".fg::<Red>().bold());
+        process::exit(1);
+    }
 }
 
-fn run_command(cli: Cli) -> Result<()> {
+fn run_command(cli: Cli) -> io::Result<()> {
     let config = Config::load()?;
     let (root, cfg) = config.get_persist_config(cli.root.as_deref())?;
 

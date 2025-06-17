@@ -1,9 +1,6 @@
 use std::collections::{BTreeSet, HashMap};
-use std::fs;
 use std::path::{Path, PathBuf};
-
-use color_eyre::Result;
-use color_eyre::eyre::eyre;
+use std::{fs, io};
 
 use crate::util;
 
@@ -55,7 +52,10 @@ impl From<&[PathBuf]> for PersistEntryMap {
     }
 }
 
-pub fn find_deletable_entries(root: &Path, path_set: &PersistEntryMap) -> Result<PersistEntrySet> {
+pub fn find_deletable_entries(
+    root: &Path,
+    path_set: &PersistEntryMap,
+) -> io::Result<PersistEntrySet> {
     let mut delete_paths = BTreeSet::new();
     collect_deletable_entries(root, path_set, &mut delete_paths)?;
     Ok(delete_paths)
@@ -65,7 +65,7 @@ fn collect_deletable_entries(
     dir: &Path,
     entry_map: &PersistEntryMap,
     entry_set: &mut PersistEntrySet,
-) -> Result<()> {
+) -> io::Result<()> {
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
         match entry_map.entries.get(&path) {
@@ -83,12 +83,15 @@ fn collect_deletable_entries(
     Ok(())
 }
 
-pub fn persist_entry(root: &Path, entry: &Path) -> Result<PathBuf> {
+pub fn persist_entry(root: &Path, entry: &Path) -> io::Result<PathBuf> {
     let src = fs::canonicalize(entry)?;
     let dst = root.join(src.strip_prefix("/").unwrap_or(&src));
 
     if dst.exists() {
-        return Err(eyre!("Destination path already exists: {}", dst.display()));
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("Destination path already exists: {}", dst.display()),
+        ));
     }
 
     for ancestor in src.ancestors() {

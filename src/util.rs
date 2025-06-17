@@ -2,9 +2,7 @@ use std::os::unix::fs::{MetadataExt, chown};
 use std::path::Path;
 use std::{fs, io};
 
-use color_eyre::Result;
-
-pub fn create_dir_with_metadata(dir: &Path, meta: &fs::Metadata) -> Result<()> {
+pub fn create_dir_with_metadata(dir: &Path, meta: &fs::Metadata) -> io::Result<()> {
     if !dir.exists() {
         fs::create_dir(dir)?;
         set_metadata(dir, meta)?;
@@ -12,13 +10,13 @@ pub fn create_dir_with_metadata(dir: &Path, meta: &fs::Metadata) -> Result<()> {
     Ok(())
 }
 
-pub fn copy_file_with_owner(src: &Path, dst: &Path) -> Result<()> {
+pub fn copy_file_with_owner(src: &Path, dst: &Path) -> io::Result<()> {
     fs::copy(src, dst)?;
     set_metadata(dst, &fs::metadata(src)?)?;
     Ok(())
 }
 
-pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
+pub fn copy_dir_recursive(src: &Path, dst: &Path) -> io::Result<()> {
     if !dst.exists() {
         fs::create_dir_all(dst)?;
         set_metadata(dst, &fs::metadata(src)?)?;
@@ -38,13 +36,12 @@ pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
     Ok(())
 }
 
-fn set_metadata(path: &Path, metadata: &fs::Metadata) -> Result<()> {
+fn set_metadata(path: &Path, metadata: &fs::Metadata) -> io::Result<()> {
     if !path.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!("Path does not exist: {}", path.display()),
-        )
-        .into());
+        ));
     }
 
     let perm = metadata.permissions();

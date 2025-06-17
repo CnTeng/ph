@@ -1,15 +1,14 @@
 use std::fmt::Write as _;
-use std::fs;
 use std::os::unix::fs::{MetadataExt as _, PermissionsExt as _};
 use std::path::Path;
+use std::{fs, io};
 
-use color_eyre::Result;
 use owo_colors::OwoColorize as _;
 use users::{get_group_by_gid, get_user_by_uid};
 
 use crate::entry::persist_entry;
 
-pub fn persist(root: &Path, entry: &Path) -> Result<()> {
+pub fn persist(root: &Path, entry: &Path) -> io::Result<()> {
     let dst = persist_entry(root, entry)?;
 
     println!(
@@ -34,7 +33,7 @@ pub fn persist(root: &Path, entry: &Path) -> Result<()> {
     Ok(())
 }
 
-fn print_metadata(info: &str, path: &Path) -> Result<()> {
+fn print_metadata(info: &str, path: &Path) -> io::Result<()> {
     let meta = fs::metadata(path)?;
     let perm: fs::Permissions = meta.permissions();
 

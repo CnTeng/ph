@@ -1,15 +1,14 @@
-use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::{fs, io};
 
-use color_eyre::Result;
 use tempfile::NamedTempFile;
 
 use crate::config::PersistConfig;
 use crate::entry::{PersistEntryMap, PersistEntrySet, find_deletable_entries};
 
-pub fn prune(root: &Path, cfg: &PersistConfig) -> Result<()> {
+pub fn prune(root: &Path, cfg: &PersistConfig) -> io::Result<()> {
     let mut entry_map = PersistEntryMap::from(root);
     entry_map.merge(&PersistEntryMap::from(cfg.directories.as_slice()));
     entry_map.merge(&PersistEntryMap::from(cfg.files.as_slice()));
@@ -50,7 +49,7 @@ pub fn prune(root: &Path, cfg: &PersistConfig) -> Result<()> {
     Ok(())
 }
 
-fn create_temp_file(entries: &[&str]) -> Result<Vec<String>> {
+fn create_temp_file(entries: &[&str]) -> io::Result<Vec<String>> {
     let mut temp = NamedTempFile::new()?;
     for line in entries {
         writeln!(temp, "{line}")?;

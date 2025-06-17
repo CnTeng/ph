@@ -1,13 +1,13 @@
 use std::fmt::Write;
+use std::io;
 use std::path::Path;
 
-use color_eyre::Result;
 use owo_colors::OwoColorize as _;
 
 use crate::config::PersistConfig;
 use crate::entry::{PersistEntryMap, PersistEntrySet, find_deletable_entries};
 
-pub fn status(root: &Path, cfg: &PersistConfig) -> Result<()> {
+pub fn status(root: &Path, cfg: &PersistConfig) -> io::Result<()> {
     let mut path_set = PersistEntryMap::from(root);
     path_set.merge(&PersistEntryMap::from(cfg.directories.as_slice()));
     path_set.merge(&PersistEntryMap::from(cfg.files.as_slice()));
