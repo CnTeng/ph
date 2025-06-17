@@ -1,0 +1,10 @@
+edition = "2024"
+hard_tabs = true
+imports_granularity = "Module"
+overflow_delimited_expr = true
+reorder_impl_items = true
+group_imports = "StdExternalCrate"
+style_edition = "2024"
+tab_spaces = 2
+unstable_features = true
+wrap_comments = true
