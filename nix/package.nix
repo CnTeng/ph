@@ -1,7 +1,7 @@
 {
+  lib,
   rustPlatform,
   version ? "git",
-  lib,
   installShellFiles,
 }:
 let
@@ -32,9 +32,11 @@ rustPlatform.buildRustPackage rec {
   '';
 
   meta = {
-    description = "A Helper for impermanence and preservation.";
+    description = "Helper for impermanence and preservation";
     homepage = "https://github.com/CnTeng/ph";
     license = lib.licenses.mit;
     mainProgram = "ph";
+    maintainers = with lib.maintainers; [ CnTeng ];
+    platforms = lib.platforms.linux;
   };
 }

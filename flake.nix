@@ -4,48 +4,37 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    flake-parts.url = "github:hercules-ci/flake-parts";
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    git-hooks-nix = {
-      url = "github:cachix/git-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    treefmt = {
-      url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs =
-    inputs@{ self, flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
+    inputs@{ self, nixpkgs, ... }:
+    let
+      forAllPkgs =
+        f:
+        nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+          system: f nixpkgs.legacyPackages.${system}
+        );
+    in
+    {
+      nixosModules.default = import ./nix/module.nix self;
 
-      imports = [
-        inputs.git-hooks-nix.flakeModule
-        inputs.treefmt.flakeModule
-      ];
+      packages = forAllPkgs (pkgs: {
+        ph = pkgs.callPackage ./nix/package.nix { };
+      });
 
-      flake.nixosModules.default = import ./nix/module.nix self;
+      checks = forAllPkgs (pkgs: {
+        ph = import ./nix/check.nix self pkgs.nixosTest;
+      });
 
-      perSystem =
-        {
-          config,
-          pkgs,
-          system,
-          ...
-        }:
+      devShells = forAllPkgs (
+        pkgs:
         let
-          toolchain = pkgs.rust-bin.selectLatestNightlyWith (
+          rust-bin = inputs.rust-overlay.lib.mkRustBin { } pkgs;
+          toolchain = rust-bin.selectLatestNightlyWith (
             toolchain:
             toolchain.default.override {
               extensions = [
@@ -56,36 +45,32 @@
           );
         in
         {
-          _module.args = {
-            pkgs = import inputs.nixpkgs {
-              inherit system;
-              overlays = [ inputs.rust-overlay.overlays.default ];
-            };
-          };
-
-          devShells.default = pkgs.mkShell {
+          default = pkgs.mkShell {
             packages = with pkgs; [
               toolchain
               cargo-edit
               cargo-sort
-
-              config.treefmt.build.wrapper
             ];
-
-            shellHook = config.pre-commit.installationScript;
           };
+        }
+      );
 
-          checks.ph = import ./nix/check.nix self pkgs.nixosTest;
+      formatter = forAllPkgs (
+        pkgs:
+        pkgs.nixfmt-tree.override {
+          settings = {
+            formatter.rustfmt = {
+              command = "rustfmt";
+              includes = [ "*.rs" ];
+              options = [
+                "--config"
+                "skip_children=true"
+              ];
+            };
 
-          packages.ph = pkgs.callPackage ./nix/ph.nix { };
-
-          treefmt.programs = {
-            nixfmt.enable = true;
-            rustfmt.package = toolchain;
-            prettier.enable = true;
-            rustfmt.enable = true;
-            taplo.enable = true;
+            global.excludes = [ "*.lock" ];
           };
-        };
+        }
+      );
     };
 }
