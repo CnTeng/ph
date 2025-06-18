@@ -1,6 +1,6 @@
 # ph
 
-A helper for [impermanence](https://github.com/nix-community/impermanence).
+A helper for [impermanence](https://github.com/nix-community/impermanence) and [preservation](https://github.com/nix-community/preservation).
 
 When you remove entries from your persistence configuration, those entries are
 not automatically deleted from the persistence root. This tool helps you prune
@@ -27,3 +27,5 @@ We provide a NixOS module. To enable it, set the following configuration:
   programs.ph.enable = true;
 }
 ```
+
+<!-- MARKDOWN LINKS & IMAGES -->

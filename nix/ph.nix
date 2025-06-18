@@ -3,7 +3,6 @@
   version ? "git",
   lib,
   installShellFiles,
-
 }:
 let
   src = lib.fileset.toSource {
@@ -23,9 +22,7 @@ rustPlatform.buildRustPackage rec {
     lockFile = "${src}/Cargo.lock";
   };
 
-  nativeBuildInputs = [
-    installShellFiles
-  ];
+  nativeBuildInputs = [ installShellFiles ];
 
   postInstall = ''
     installShellCompletion --cmd ph \
@@ -35,7 +32,7 @@ rustPlatform.buildRustPackage rec {
   '';
 
   meta = {
-    description = "Helper for impermanence.";
+    description = "A Helper for impermanence and preservation.";
     homepage = "https://github.com/CnTeng/ph";
     license = lib.licenses.mit;
     mainProgram = "ph";
