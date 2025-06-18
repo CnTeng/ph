@@ -1,5 +1,5 @@
 {
-  description = "Helper for impermanence.";
+  description = "A Helper for impermanence and preservation.";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
