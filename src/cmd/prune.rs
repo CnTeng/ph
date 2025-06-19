@@ -30,6 +30,10 @@ pub fn prune(root: &Path, cfg: &PersistConfig) -> io::Result<()> {
 
     let kept_set: PersistEntrySet = kept_entries.into_iter().map(PathBuf::from).collect();
     let delete_set: PersistEntrySet = deletable_entries.difference(&kept_set).cloned().collect();
+    if delete_set.is_empty() {
+        println!("Nothing to do for root: {}", root.display());
+        return Ok(());
+    }
 
     println!(
         "Entries to delete for root: {}\n{}",
