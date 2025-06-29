@@ -7,18 +7,19 @@ use crate::cmd::format::format_metadata;
 use crate::entry::persist_entry;
 
 pub fn persist(root: &Path, entry: &Path) -> io::Result<()> {
+    let src = fs::canonicalize(entry)?;
     let dst = persist_entry(root, entry)?;
 
     println!(
         "{}: Persist {} to {}",
         "Finished".fg::<colors::Green>().bold(),
-        entry.display().bold(),
+        src.display().bold(),
         dst.display().bold()
     );
 
     println!("Source:");
-    print_metadata("target", entry)?;
-    if let Some(src_parent) = entry.parent() {
+    print_metadata("target", &src)?;
+    if let Some(src_parent) = src.parent() {
         print_metadata("parent", src_parent)?;
     }
 
