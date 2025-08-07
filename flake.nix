@@ -69,7 +69,7 @@
 
           formatter = pkgs.nixfmt-tree.override {
             settings.formatter.rustfmt = {
-              command = "rustfmt";
+              command = "${toolchain}/bin/rustfmt";
               includes = [ "*.rs" ];
               options = [
                 "--config"
