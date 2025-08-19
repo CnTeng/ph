@@ -46,3 +46,60 @@ fn set_metadata(path: &Path, metadata: &fs::Metadata) -> io::Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
+
+    use tempfile::tempdir;
+
+    use super::*;
+
+    #[test]
+    fn test_create_dir_with_metadata() {
+        let dir = tempdir().unwrap();
+        let src = dir.path().join("src");
+        let dst = dir.path().join("dst");
+
+        fs::create_dir(&src).unwrap();
+        let meta = fs::metadata(&src).unwrap();
+        create_dir_with_metadata(&dst, &meta).unwrap();
+        let dst_meta = fs::metadata(&dst).unwrap();
+
+        assert_eq!(dst_meta.permissions().mode(), meta.permissions().mode());
+    }
+
+    #[test]
+    fn test_copy_file_with_metadata() {
+        let dir = tempdir().unwrap();
+        let src = dir.path().join("src.txt");
+        let dst = dir.path().join("dst.txt");
+
+        fs::write(&src, "Hello, World!").unwrap();
+        let meta = fs::metadata(&src).unwrap();
+        copy_file_with_metadata(&src, &dst).unwrap();
+        let dst_meta = fs::metadata(&dst).unwrap();
+
+        assert_eq!(dst_meta.permissions().mode(), meta.permissions().mode());
+        assert_eq!(fs::read_to_string(&dst).unwrap(), "Hello, World!");
+    }
+
+    #[test]
+    fn test_copy_dir_recursive_with_metadata() {
+        let dir = tempdir().unwrap();
+        let src = dir.path().join("src");
+        let dst = dir.path().join("dst");
+
+        fs::create_dir(&src).unwrap();
+        fs::write(src.join("file1.txt"), "File 1").unwrap();
+        fs::write(src.join("file2.txt"), "File 2").unwrap();
+        copy_dir_recursive_with_metadata(&src, &dst).unwrap();
+        let src_meta = fs::metadata(&src).unwrap();
+        let dst_meta = fs::metadata(&dst).unwrap();
+
+        assert_eq!(dst_meta.permissions().mode(), src_meta.permissions().mode());
+        assert_eq!(fs::read_to_string(dst.join("file1.txt")).unwrap(), "File 1");
+        assert_eq!(fs::read_to_string(dst.join("file2.txt")).unwrap(), "File 2");
+    }
+}

@@ -110,3 +110,98 @@ pub fn persist_entry(root: &Path, entry: &Path) -> io::Result<PathBuf> {
 
     Ok(dst)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::fs::File;
+    use std::path::PathBuf;
+
+    use super::*;
+
+    #[test]
+    fn test_merge_for_persist_entry_map() {
+        let mut map1 = PersistEntryMap {
+            entries: HashMap::from([(PathBuf::from("a"), true), (PathBuf::from("b"), false)]),
+        };
+        let map2 = PersistEntryMap {
+            entries: HashMap::from([(PathBuf::from("b"), true), (PathBuf::from("c"), false)]),
+        };
+
+        map1.merge(&map2);
+        assert_eq!(map1.entries.get(&PathBuf::from("a")), Some(&true));
+        assert_eq!(map1.entries.get(&PathBuf::from("b")), Some(&true));
+        assert_eq!(map1.entries.get(&PathBuf::from("c")), Some(&false));
+    }
+
+    #[test]
+    fn test_from_path_for_persist_entry_map() {
+        use std::path::PathBuf;
+
+        let path = PathBuf::from("/a/b/c");
+        let map = PersistEntryMap::from(path.as_path());
+
+        let expected_paths = vec![
+            PathBuf::from("/"),
+            PathBuf::from("/a"),
+            PathBuf::from("/a/b"),
+            PathBuf::from("/a/b/c"),
+        ];
+
+        for ancestor in &expected_paths {
+            if ancestor == &path {
+                assert_eq!(map.entries.get(ancestor), Some(&true));
+            } else {
+                assert_eq!(map.entries.get(ancestor), Some(&false));
+            }
+        }
+        assert_eq!(map.entries.len(), expected_paths.len());
+    }
+
+    #[test]
+    fn test_from_slice_of_pathbuf_for_persist_entry_map() {
+        use std::path::PathBuf;
+
+        let paths = vec![PathBuf::from("/a/b/c"), PathBuf::from("/a/b/d")];
+        let map = PersistEntryMap::from(paths.as_slice());
+
+        let expected_paths = vec![
+            PathBuf::from("/"),
+            PathBuf::from("/a"),
+            PathBuf::from("/a/b"),
+            PathBuf::from("/a/b/c"),
+            PathBuf::from("/a/b/d"),
+        ];
+
+        for ancestor in &expected_paths {
+            if ancestor == &PathBuf::from("/a/b/c") || ancestor == &PathBuf::from("/a/b/d") {
+                assert_eq!(map.entries.get(ancestor), Some(&true));
+            } else {
+                assert_eq!(map.entries.get(ancestor), Some(&false));
+            }
+        }
+        assert_eq!(map.entries.len(), expected_paths.len());
+    }
+
+    #[test]
+    fn test_find_deletable_entries() {
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+
+        let file1 = root.join("file1.txt");
+        let file2 = root.join("file2.txt");
+        File::create(&file1).unwrap();
+        File::create(&file2).unwrap();
+
+        let mut entry_map = PersistEntryMap {
+            entries: HashMap::new(),
+        };
+        entry_map.entries.insert(file1.clone(), true);
+
+        let deletable = find_deletable_entries(root, &entry_map).unwrap();
+        assert!(deletable.contains(&file2));
+        assert!(!deletable.contains(&file1));
+    }
+}
