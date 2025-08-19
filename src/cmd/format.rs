@@ -51,3 +51,41 @@ fn format_user_group(uid: u32, gid: u32) -> String {
 
     format!("{user} {group}")
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
+
+    use super::*;
+
+    #[test]
+    fn test_format_permissions() {
+        let perm = fs::Permissions::from_mode(0o754);
+        let s = format_permissions(&perm);
+        assert_eq!(s, "rwxr-xr-- 0754");
+    }
+
+    #[test]
+    fn test_format_user_group_fallback() {
+        let s = format_user_group(99999, 99999);
+        assert_eq!(s, "99999 99999");
+    }
+
+    #[test]
+    fn test_format_entry_set() {
+        let entry_set: PersistEntrySet = vec![
+            "/path/to/entry1".into(),
+            "/path/to/entry2".into(),
+            "/path/to/entry3".into(),
+        ]
+        .into_iter()
+        .collect();
+
+        let formatted = format_entry_set(&entry_set);
+        assert_eq!(
+            formatted,
+            "\t\u{1b}[31m/path/to/entry1\u{1b}[39m\n\t\u{1b}[31m/path/to/entry2\u{1b}[39m\n\t\u{1b}[31m/path/to/entry3\u{1b}[39m"
+        );
+    }
+}
