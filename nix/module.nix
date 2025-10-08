@@ -12,8 +12,8 @@ let
   mkImpermanenceConfig =
     cfg:
     lib.optionalAttrs cfg.enable {
-      directories = map (dir: dir.persistentStoragePath + dir.dirPath) cfg.directories;
-      files = map (file: file.persistentStoragePath + file.filePath) cfg.files;
+      directories = map (d: d.persistentStoragePath + d.dirPath) cfg.directories;
+      files = map (f: f.persistentStoragePath + f.filePath) cfg.files;
     };
 
   mkPreservationConfig =
@@ -22,10 +22,11 @@ let
       root = cfg.persistentStoragePath;
       userDirs = lib.flatten (map (u: u.directories) (lib.attrValues cfg.users));
       userFiles = lib.flatten (map (u: u.files) (lib.attrValues cfg.users));
+      filter = builtins.filter (d: d.how != "_intermediate");
     in
     {
-      directories = map (dir: root + dir.directory) (cfg.directories ++ userDirs);
-      files = map (file: root + file.file) (cfg.files ++ userFiles);
+      directories = map (d: root + d.directory) (filter (cfg.directories ++ userDirs));
+      files = map (f: root + f.file) (filter (cfg.files ++ userFiles));
     };
 
   deepMerge =
