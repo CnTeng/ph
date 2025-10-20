@@ -28,7 +28,7 @@
         rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
     in
     {
-      flake.nixosModules.default = import ./nix/module.nix self;
+      nixosModules.default = import ./nix/module.nix self;
 
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
