@@ -28,6 +28,10 @@
         rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
     in
     {
+      packages = forEachSystem (pkgs: {
+        ph = pkgs.callPackage ./nix/package.nix { };
+      });
+
       nixosModules.default = import ./nix/module.nix self;
 
       devShells = forEachSystem (pkgs: {
@@ -38,10 +42,6 @@
             cargo-sort
           ];
         };
-      });
-
-      packages = forEachSystem (pkgs: {
-        ph = pkgs.callPackage ./nix/package.nix { };
       });
 
       checks = forEachSystem (pkgs: {
@@ -60,16 +60,17 @@
 
       formatter = forEachSystem (
         pkgs:
-        (pkgs.nixfmt-tree.override {
+        pkgs.nixfmt-tree.override {
           settings.formatter.rustfmt = {
-            command = "${mkRustToolchain pkgs}/bin/rustfmt";
-            includes = [ "*.rs" ];
+            command = "rustfmt";
             options = [
               "--config"
               "skip_children=true"
             ];
+            includes = [ "*.rs" ];
           };
-        })
+          runtimeInputs = [ (mkRustToolchain pkgs) ];
+        }
       );
     };
 }
