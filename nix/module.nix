@@ -50,7 +50,11 @@ in
   options.programs.ph = {
     enable = lib.mkEnableOption "ph";
 
-    package = lib.mkPackageOption self.packages.${pkgs.system} "ph" { };
+    package =
+      let
+        inherit (pkgs.stdenv.hostPlatform) system;
+      in
+      lib.mkPackageOption self.packages.${system} "ph" { };
   };
 
   config = lib.mkIf cfg.enable {
