@@ -1,17 +1,10 @@
 {
   description = "A Helper for impermanence and preservation.";
 
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
   outputs =
-    inputs@{ self, nixpkgs, ... }:
+    { self, nixpkgs, ... }:
     let
       forEachSystem =
         f:
@@ -20,12 +13,7 @@
           "aarch64-linux"
         ] (system: f nixpkgs.legacyPackages.${system});
 
-      mkRustToolchain =
-        pkgs:
-        let
-          rust-bin = inputs.rust-overlay.lib.mkRustBin { } pkgs;
-        in
-        rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+      mkRustfmt = pkgs: pkgs.rustfmt.override { asNightly = true; };
     in
     {
       packages = forEachSystem (pkgs: {
@@ -37,9 +25,13 @@
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
           packages = with pkgs; [
-            (mkRustToolchain pkgs)
+            rustc
+            cargo
             cargo-edit
             cargo-sort
+            clippy
+            rust-analyzer
+            (mkRustfmt pkgs)
           ];
         };
       });
@@ -69,7 +61,7 @@
             ];
             includes = [ "*.rs" ];
           };
-          runtimeInputs = [ (mkRustToolchain pkgs) ];
+          runtimeInputs = [ (mkRustfmt pkgs) ];
         }
       );
     };
